@@ -9,6 +9,32 @@ const PORT = process.env.PORT || 3000;
 const GMAIL_USER = process.env.GMAIL_USER || 'njeximconsultants@gmail.com';
 const GMAIL_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:8000',
+  'https://www.njeximconsultants.com',
+  'https://njeximconsultants.com',
+  'https://akhiljacobparapurathu.github.io'
+];
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const isAllowedOrigin = origin && allowedOrigins.includes(origin);
+
+  if (isAllowedOrigin || !origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  }
+
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));

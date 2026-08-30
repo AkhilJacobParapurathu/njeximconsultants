@@ -1,5 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('contactForm');
+  const API_BASE =
+    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:3000'
+      : 'https://nj-exim-consultants-api.onrender.com';
 
   if (form) {
     form.addEventListener('submit', async (event) => {
@@ -21,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
       button.disabled = true;
 
       try {
-        const response = await fetch('/api/inquiry', {
+        const response = await fetch(`${API_BASE}/api/inquiry`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -29,7 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify({ name, phone, email, service, message })
         });
 
-        const result = await response.json();
+        const contentType = response.headers.get('content-type') || '';
+        const result = contentType.includes('application/json')
+          ? await response.json()
+          : { message: await response.text() };
 
         if (!response.ok) {
           throw new Error(result.message || 'Unable to send inquiry.');
