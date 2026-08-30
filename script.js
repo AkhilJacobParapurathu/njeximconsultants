@@ -2,15 +2,47 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('contactForm');
 
   if (form) {
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
+
       const name = form.querySelector('input[name="name"]').value.trim();
+      const phone = form.querySelector('input[name="phone"]').value.trim();
+      const email = form.querySelector('input[name="email"]').value.trim();
+      const service = form.querySelector('select[name="service"]').value.trim();
+      const message = form.querySelector('textarea[name="message"]').value.trim();
       const button = form.querySelector('button[type="submit"]');
 
-      button.textContent = 'Inquiry Sent';
+      if (!name || !phone || !email || !service || !message) {
+        alert('Please fill in all fields before sending your inquiry.');
+        return;
+      }
+
+      button.textContent = 'Sending...';
       button.disabled = true;
 
-      alert(`Thank you, ${name || 'there'}! Your inquiry has been noted. We will contact you soon.`);
+      try {
+        const response = await fetch('/api/inquiry', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, phone, email, service, message })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || 'Unable to send inquiry.');
+        }
+
+        form.reset();
+        button.textContent = 'Inquiry Sent';
+        alert(`Thank you, ${name}! Your inquiry has been sent successfully.`);
+      } catch (error) {
+        button.textContent = 'Send Inquiry';
+        button.disabled = false;
+        alert(error.message || 'Something went wrong. Please try again or call us directly.');
+      }
     });
   }
 
