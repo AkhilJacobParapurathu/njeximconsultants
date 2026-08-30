@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const API_BASE =
     window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:3000'
-      : 'https://nj-exim-consultants-api.onrender.com';
+      : 'https://njeximconsultants.onrender.com';
 
   if (form) {
     form.addEventListener('submit', async (event) => {
