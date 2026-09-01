@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('contactForm');
+  const formStatus = document.getElementById('formStatus');
   const API_BASE =
     window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:3000'
@@ -9,6 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
 
+      formStatus.textContent = '';
+      formStatus.className = 'form-status';
+
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        formStatus.textContent = 'Please complete all required fields correctly.';
+        formStatus.classList.add('error');
+        return;
+      }
+
       const name = form.querySelector('input[name="name"]').value.trim();
       const phone = form.querySelector('input[name="phone"]').value.trim();
       const email = form.querySelector('input[name="email"]').value.trim();
@@ -16,13 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const message = form.querySelector('textarea[name="message"]').value.trim();
       const button = form.querySelector('button[type="submit"]');
 
-      if (!name || !phone || !email || !service || !message) {
-        alert('Please fill in all fields before sending your inquiry.');
-        return;
-      }
-
       button.textContent = 'Sending...';
       button.disabled = true;
+      form.setAttribute('aria-busy', 'true');
 
       try {
         const response = await fetch(`${API_BASE}/api/inquiry`, {
@@ -44,11 +51,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         form.reset();
         button.textContent = 'Inquiry Sent';
-        alert(`Thank you, ${name}! Your inquiry has been sent successfully.`);
+        formStatus.textContent = `Thank you, ${name}! Your inquiry has been sent successfully.`;
+        formStatus.classList.add('success');
       } catch (error) {
-        button.textContent = 'Send Inquiry';
+        formStatus.textContent = error.message || 'Something went wrong. Please try again or call us directly.';
+        formStatus.classList.add('error');
+      } finally {
+        form.removeAttribute('aria-busy');
         button.disabled = false;
-        alert(error.message || 'Something went wrong. Please try again or call us directly.');
+        if (button.textContent !== 'Inquiry Sent') {
+          button.textContent = 'Send Inquiry';
+        }
       }
     });
   }
@@ -60,13 +73,24 @@ document.addEventListener('DOMContentLoaded', () => {
     menuButton.addEventListener('click', () => {
       const isOpen = mobileMenu.classList.toggle('open');
       menuButton.setAttribute('aria-expanded', String(isOpen));
+      menuButton.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
     });
 
     mobileMenu.querySelectorAll('a').forEach((link) => {
       link.addEventListener('click', () => {
         mobileMenu.classList.remove('open');
         menuButton.setAttribute('aria-expanded', 'false');
+        menuButton.setAttribute('aria-label', 'Open menu');
       });
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && mobileMenu.classList.contains('open')) {
+        mobileMenu.classList.remove('open');
+        menuButton.setAttribute('aria-expanded', 'false');
+        menuButton.setAttribute('aria-label', 'Open menu');
+        menuButton.focus();
+      }
     });
   }
 
@@ -80,16 +104,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const isOpen = item.classList.contains('active');
         faqItems.forEach((faq) => {
           faq.classList.remove('active');
+          faq.querySelector('.faq-question')?.setAttribute('aria-expanded', 'false');
         });
 
         if (!isOpen) {
           item.classList.add('active');
+          button.setAttribute('aria-expanded', 'true');
         }
       });
     }
   });
 
   const revealItems = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    revealItems.forEach((item) => item.classList.add('visible'));
+    return;
+  }
+
   const revealObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -104,3 +135,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   revealItems.forEach((item) => revealObserver.observe(item));
 });
+
