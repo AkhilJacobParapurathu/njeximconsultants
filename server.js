@@ -9,6 +9,14 @@ const PORT = process.env.PORT || 3000;
 const GMAIL_USER = process.env.GMAIL_USER || 'njeximconsultants@gmail.com';
 const GMAIL_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 
+const escapeHtml = (value) =>
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:8000',
@@ -40,10 +48,23 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
 app.post('/api/inquiry', async (req, res) => {
-  const { name, phone, email, service, message } = req.body || {};
+  const fields = req.body || {};
+  const name = String(fields.name || '').trim();
+  const phone = String(fields.phone || '').trim();
+  const email = String(fields.email || '').trim();
+  const service = String(fields.service || '').trim();
+  const message = String(fields.message || '').trim();
 
   if (!name || !phone || !email || !service || !message) {
     return res.status(400).json({ success: false, message: 'All fields are required.' });
+  }
+
+  if (name.length > 100 || phone.length > 20 || email.length > 254 || service.length > 100 || message.length > 3000) {
+    return res.status(400).json({ success: false, message: 'One or more fields are too long.' });
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
   }
 
   if (!GMAIL_PASSWORD || GMAIL_PASSWORD === 'YOUR_GMAIL_APP_PASSWORD') {
@@ -69,12 +90,12 @@ app.post('/api/inquiry', async (req, res) => {
       text: `Name: ${name}\nPhone: ${phone}\nEmail: ${email}\nService: ${service}\n\nMessage:\n${message}`,
       html: `
         <h3>New inquiry from NJ EXIM Consultants website</h3>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Service:</strong> ${service}</p>
+        <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+        <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
+        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+        <p><strong>Service:</strong> ${escapeHtml(service)}</p>
         <p><strong>Requirement:</strong></p>
-        <p>${message.replace(/\n/g, '<br>')}</p>
+        <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
       `
     };
 
@@ -98,3 +119,4 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });
+
